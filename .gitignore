@@ -1,0 +1,14 @@
+# Build outputs
+build/
+
+# Cached source checkouts (reproducible via Makefile)
+.cache/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editor
+.vscode/
+*.swp
+*~
