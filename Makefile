@@ -94,6 +94,12 @@ $(SENTINEL):
 		git fetch --depth=1 origin $(P64_HASH) && \
 		git checkout $(P64_HASH) && \
 		git submodule update --init --recursive
+	@echo "==> Applying patches"
+	@cd $(CACHE_DIR) && \
+		for p in $(CURDIR)/patches/*.patch; do \
+			echo "  Applying $$(basename $$p)"; \
+			git apply --whitespace=nowarn "$$p" || exit 1; \
+		done
 	@touch $(SENTINEL)
 
 ###########################################################

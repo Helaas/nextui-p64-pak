@@ -1,0 +1,68 @@
+From: NextUI <nextui@local>
+Subject: [PATCH] Slim savestates: rebuild TLB LUT tables instead of serializing them
+
+The TLB lookup tables (tlb_LUT_r + tlb_LUT_w) are 8 MB of precomputed
+data derived from the 32 TLB entries (~3 KB).  Saving and restoring them
+is redundant — they can be rebuilt in microseconds via tlb_map().
+
+This halves the savestate from ~16 MB to ~8 MB, which is critical for
+rewind on memory-constrained devices (TG5040: 1 GB RAM).
+
+---
+ libretro/libretro.c                     | 2 +-
+ mupen64plus-core/src/main/savestates.c  | 17 +++++++++++------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index 1652570..2e92e28 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -2033,7 +2033,7 @@ size_t retro_get_memory_size(unsigned type)
+
+ size_t retro_serialize_size (void)
+ {
+-    return 16788288 + 1024; /* < 16MB and some change... ouch */
++    return 8399680 + 1024; /* ~8 MB: TLB LUT tables rebuilt on load instead of serialized */
+ }
+
+ bool retro_serialize(void *data, size_t size)
+diff --git a/mupen64plus-core/src/main/savestates.c b/mupen64plus-core/src/main/savestates.c
+index 8750a2e..3b58084 100644
+--- a/mupen64plus-core/src/main/savestates.c
++++ b/mupen64plus-core/src/main/savestates.c
+@@ -225,9 +225,6 @@ int savestates_load_m64p(const unsigned char *data, size_t size)
+    g_dev.pi.flashram.erase_offset = GETDATA(curr, unsigned int);
+    g_dev.pi.flashram.write_pointer = GETDATA(curr, unsigned int);
+
+-   COPYARRAY(tlb_LUT_r, curr, unsigned int, 0x100000);
+-   COPYARRAY(tlb_LUT_w, curr, unsigned int, 0x100000);
+-
+    *r4300_llbit() = GETDATA(curr, unsigned int);
+    COPYARRAY(r4300_regs(), curr, int64_t, 32);
+    COPYARRAY(cp0_regs, curr, uint32_t, 32);
+@@ -275,6 +272,13 @@ int savestates_load_m64p(const unsigned char *data, size_t size)
+       tlb_e[i].phys_odd   = GETDATA(curr, unsigned int);
+    }
+
++   /* Rebuild TLB LUT tables from the 32 TLB entries we just loaded.
++    * This avoids serializing 8 MB of precomputed lookup data. */
++   memset(tlb_LUT_r, 0, 0x100000 * sizeof(tlb_LUT_r[0]));
++   memset(tlb_LUT_w, 0, 0x100000 * sizeof(tlb_LUT_w[0]));
++   for (i = 0; i < 32; i++)
++      tlb_map(&tlb_e[i]);
++
+    savestates_load_set_pc(GETDATA(curr, uint32_t));
+
+    *r4300_next_interrupt() = GETDATA(curr, unsigned int);
+@@ -469,9 +473,6 @@ int savestates_save_m64p(unsigned char *data, size_t size)
+    PUTDATA(curr, unsigned int, g_dev.pi.flashram.erase_offset);
+    PUTDATA(curr, unsigned int, g_dev.pi.flashram.write_pointer);
+
+-   PUTARRAY(tlb_LUT_r, curr, unsigned int, 0x100000);
+-   PUTARRAY(tlb_LUT_w, curr, unsigned int, 0x100000);
+-
+    PUTDATA(curr, unsigned int, *r4300_llbit());
+    PUTARRAY(r4300_regs(), curr, int64_t, 32);
+    PUTARRAY(cp0_regs, curr, uint32_t, 32);
+--
+2.39.0
