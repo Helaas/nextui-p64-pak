@@ -1,6 +1,6 @@
 # nextui-p64-pak
 
-NextUI emulator pak bundling **parallel-n64** (mupen64plus-libretro) as a libretro core.
+NextUI emulator pak bundling **parallel-n64** (mupen64plus-libretro) as a libretro core. Doesn't work without Minarch changes, do not use.
 
 Parallel-n64 is an optimized/rewritten Nintendo 64 emulator made specifically for libretro, originally based on Mupen64 Plus. Supports aarch64 dynamic recompilation for best performance on ARM devices.
 
@@ -10,7 +10,7 @@ Parallel-n64 is an optimized/rewritten Nintendo 64 emulator made specifically fo
 |----------|--------|-----------|
 | tg5040 | Trimui Smart Pro | `ghcr.io/loveretro/tg5040-toolchain:latest` |
 | tg5050 | Trimui Smart Pro S | `ghcr.io/loveretro/tg5050-toolchain:latest` |
-| my355 | Anbernic MY355 | `ghcr.io/loveretro/my355-toolchain:latest` |
+| my355 | Miyoo Flip MY355 | `ghcr.io/loveretro/my355-toolchain:latest` |
 
 ## Building
 
